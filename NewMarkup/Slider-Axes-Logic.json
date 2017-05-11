@@ -1,6 +1,22 @@
 {
 	"-Finding a suitable Slider/Axes Syntax, flexible and straightforward...":"",
 	"---------------------------------------------------":"",
+	"Axes": {
+
+		"SliderWeight": [[1, 220],["Light:1", "Regular:80", "Bold:160", "Black:220"]],
+
+		"SliderWeight": [[1, 220],["Light", "Regular", "Black"]],
+		"SliderWeightTest": [[1, 220],["Black", "Regular", "Light"]],
+		"SliderWeightBalance": [[0,1], ["SliderWeight", "SliderWeightTest"]],
+
+		"SliderWeight": [[1, 300],["Light", "Regular", "SemiboldInstance:120 = Black*0.5 + Light*0.5", "Black"]],
+
+
+		"SliderContrast": [[0, 1], "Contrast * SliderWeight"],
+		"SliderContrast": [[0, 1], "Contrast.map(0,1) * SliderWeight.map(0,1)"],
+
+		"SliderContrastMasterPlain": [[1, 300], "Light", "Contrast"]
+	},
 	"----- as in ROP ------------": "",
 	"Axes": {
 		"A_Size":			[6, 96],
