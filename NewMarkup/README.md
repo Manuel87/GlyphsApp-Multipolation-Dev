@@ -23,9 +23,9 @@ Syntax Example for a font with a flexible shadow axis (@RobertPraley)
     "InstancesSetup": {
         "VariableFont": {
             "Slider": {
-                "Weight":       [[1, 220], "WeightAxes"],
-                "Shadow":       [0, 1],
-                "ShadowAngle":  [-45, 45]
+                "[wght]Weight":       [[1, 220], "WeightAxes"],
+                "[shdw]Shadow":       [0, 1],
+                "[shda]ShadowAngle":  [-45, 45]
             },
             "Master": {
                 "Shadow":       "SliderShadow * SliderWeight"
