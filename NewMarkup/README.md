@@ -1,3 +1,5 @@
+Syntax Example for a font with a flexible shadow axis (@RobertPraley)
+```json
 "Master Relations": {
         "Regular": {
             "Bold":{},
@@ -30,3 +32,4 @@
             }
         }
     },
+```
