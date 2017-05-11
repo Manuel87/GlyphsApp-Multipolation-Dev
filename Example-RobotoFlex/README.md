@@ -49,7 +49,8 @@ Direct export from Glyphs is not yet supported, therefore the following workarou
 - build.sh
 
 ### Build
-1. Export UFOs ()
+
+1. Export UFOs
 	- The main Masters can be directly exported as UFOs 
 	- “RoundedCorners” and “Tight” needs to be generated from instances and then exported 
 	- All “local intepolations” still need to be exported as separate Master-UFOs
@@ -57,5 +58,8 @@ Direct export from Glyphs is not yet supported, therefore the following workarou
 3. Install [Fontmake](https://github.com/googlei18n/fontmake) (if not already installed)
 4. execute the build.sh file via Terminal ([instructions](https://apple.stackexchange.com/questions/235128/how-do-i-run-a-sh-or-command-file-in-terminal))
 5. Cross fingers and enjoy
+
+### TODO
+[ ] @Build: rename Master to readable Names again and handle the UFO with Instances, this way we can just export the instances as UFO, done.)
 
 If it did not work have a look over here: https://github.com/scribbletone/i-can-variable-font)
