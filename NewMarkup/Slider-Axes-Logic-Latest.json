@@ -94,7 +94,7 @@
 
 		"_-----------------------------------------------------------_": "",
 		"_description_": "",
-		"_master_sequence_": 	"This calculations and limits make it easy to perfectly customize the behaviour of your variable font ///// Default Setup: Nothing is declared -> min/max/between functions get inserted automatically if master_sequence is present within the slider options /// And if there is no sequence defined the Master Axes becomes a simple Slider Axes with min=value_parent and max=value_master ",
+		"_master_sequence_": 	"This calculations and limits link Master+Slider axes and make it easy to perfectly customize the behaviour of your variable font ///// Default Setup: Nothing is declared -> min/max/between functions get inserted automatically if master_sequence is present within the slider options /// And if there is no sequence defined the Master Axes becomes a simple Slider Axes with min=value_parent and max=value_master ",
 
 		"_Alt_Labels_": "Instance Calculations / Variable Instance Setup / Master-Slider-Mapping / ...",
 
