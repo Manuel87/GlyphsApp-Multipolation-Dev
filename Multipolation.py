@@ -5,9 +5,14 @@ Advanced interpolation with infinite axes.
 Author: Manuel von Gebhardi (CC-BY-SA)
 Co-Authors: Matthias Visser, ...
 
-TODO: Interface
+TODO:
+o Integration as a Custom Parameter in Glyphs Font Info (getting rid of the extra spec file)
+o Interface (Setup, Slider, Knobs, ...)
+o Full integration of complex axes (axes relations, math, switches, ...)
+o Direct export as a variable  font (though the variable font spec has to catch up with features)
 
 """
+
 from Foundation import *
 import GlyphsApp
 import vanilla
@@ -36,7 +41,7 @@ LocalGlyphInterpolations = []
 LocalGlyphInterpolations += [""]
 
 
-"""Functions"""
+# Functions
 
 
 def string_to_list(x):
@@ -59,7 +64,7 @@ def map(value, inMin, inMax, outMin, outMax):
 	return outMin + (valueScaled * rightSpan)
 
 
-"""convert unicode json data"""
+# convert unicode json data
 
 
 def byteify(input):
@@ -202,7 +207,7 @@ def getInstanceMasterValuesCalcOrder(data):
 					# print "OrderAsArrayBefore", OrderAsArray
 					OrderAsArray.insert(
 						firstIndex, OrderAsArray.pop(secondIndex))
-					# print MasterWithChildsName, secondIndex, ">", firstIndex, "\t"#,
+
 					# print "OrderAsArrayAfter", OrderAsArray
 
 					#, "(contains:", MasterWithChildsName2, children
@@ -227,7 +232,7 @@ def getMasterWithChildren(data):  # previous name: getMasterWithChildren
 	for mastername in data["MasterSetupMapping"]:
 		if not mastername.startswith("_"):  # exclude comments, etc.
 
-			# print "\n#######"
+			# print
 			# print mastername, "mastername"
 			# print len(data["MasterSetupMapping"][mastername]), 'len(data["MasterSetupMapping"][mastername])'
 			# print data["MasterSetupMapping"][mastername],
@@ -235,9 +240,7 @@ def getMasterWithChildren(data):  # previous name: getMasterWithChildren
 			if (len(data["MasterSetupMapping"][mastername]) > 2):  # only the ones with children
 				children = data["MasterSetupMapping"][mastername][2]
 
-				# print
-				# "######################################\n######################################\n######################################\n######################################\n######################################\n",
-				# children
+
 
 				if (children == "All"):
 					# excludes this mastername
@@ -269,47 +272,137 @@ def getMasterWithOutChildren(data):  # previous name: getMasterWithChildren
 	return MasterWithOutChildrenArray
 
 
+
+
+
 def convert2LocalInterpolation(data):
 
-	for instancename in data["InstancesSetup"]:
-		# print instancename
-		if not instancename.startswith("_"):
-			#				if "#All" in data["InstancesSetup"][instancename]:
-			#					charGroupInterpolation = True
-			#				else:
-			#					charGroupInterpolation = False
-			#
-			# if (charGroupInterpolation == False):
+	# Base Settings // Fallback Setting / Base Setting // allows for less repitition in the spec file
+	# ----------------------
+	# Check if there are fallback values
+	base_setting = True
+	try:
+		_base_setting = data["InstancesSetup"]["_base_setting"]
+	except:
+		try:
+			data["InstancesSetup"]["_base_setting"] = data["InstancesSetup"]["_fallback_values"]
+		except:
+			try:
+				data["InstancesSetup"]["_base_setting"] = data["InstancesSetup"]["Default"]
+			except:
+				try:
+					data["InstancesSetup"]["_base_setting"] = data["InstancesSetup"]["Regular"]
+				except:
+					base_setting = False
+					# print "ERROR - please one of the following Instances: Regular, Default, _fallback_values"
+					# TODO: The setting of the Root master could also be set up as the base setting though
 
-				 # data["InstancesSetup"][instancename].copy
+	if not ("#All" in data["InstancesSetup"]["_base_setting"]):
+		tempdata = copy.deepcopy(data)
+		del data["InstancesSetup"]["_base_setting"]
+		data["InstancesSetup"]["_base_setting"] = {}
+		data["InstancesSetup"]["_base_setting"]["#All"] = tempdata["InstancesSetup"]["_base_setting"]
+	# ----------------------
+	# END - Base Settings
+
+
+	# Go through all Instances
+	for instancename in data["InstancesSetup"]:
+
+		forced_Setup_on_all_Groups = False
+
+		for charGroupName in data["InstancesSetup"][instancename]:
+			if charGroupName == "_All_Force":
+				#tempdata = copy.deepcopy(data)
+				#del data["InstancesSetup"][instancename]
+				#data["InstancesSetup"][instancename] = {}
+				forced_Setup_on_all_Groups = tempdata["InstancesSetup"][instancename]["_All_Force"]
+				forced_Setup_on_all_Groups = copy.deepcopy(forced_Setup_on_all_Groups)
+
+
+
+
+
+		# ignore all but Master-Axis (without _) and CharGroups (#)
+		if not instancename.startswith("_"):
+
+
+			# If there are no local Interpolations == CharGroups
+			# > Restructure > put axis-interpolation infos into #All
+
 
 			if not ("#All" in data["InstancesSetup"][instancename]):
-				charGroupName = "#All"
-
-				# charGroupNameList = ["#All"]
-				# for charGroupName in charGroupNameList:
 
 				tempdata = copy.deepcopy(data)
-
 				del data["InstancesSetup"][instancename]
-
 				data["InstancesSetup"][instancename] = {}
-				data["InstancesSetup"][instancename][
-					charGroupName] = tempdata["InstancesSetup"][instancename]
+
+				data["InstancesSetup"][instancename]["#All"] = tempdata["InstancesSetup"][instancename]
+
+
+			# Apply the values of the "_base_setting" instance to all other Groups if not otherwise specified
+			if base_setting:
+				if not (instancename == "_base_setting"):
+					tempdata = copy.deepcopy(data)
+					del data["InstancesSetup"][instancename]["#All"]
+					data["InstancesSetup"][instancename]["#All"] = {}
+
+					data["InstancesSetup"][instancename]["#All"] = tempdata["InstancesSetup"]["_base_setting"]["#All"]
+					# overwrite with original settings, if they exist
+					for mastername in tempdata["InstancesSetup"][instancename]["#All"]:
+						data["InstancesSetup"][instancename]["#All"][mastername] = tempdata["InstancesSetup"][instancename]["#All"][mastername]
+
+
+
+
+
+
+
+
+			# Set fallback values for other char groups
+			if base_setting:
+				for charGroupName in data["InstancesSetup"]["_base_setting"]:
+					if not (charGroupName == "#All"):
+
+						tempdata = copy.deepcopy(data)
+						try:
+							del data["InstancesSetup"][instancename][charGroupName]
+							charGroupName_does_exist = True
+						except: #does not exist, assign directly
+							charGroupName_does_exist = False
+							pass
+						data["InstancesSetup"][instancename][charGroupName] = {}
+						data["InstancesSetup"][instancename][charGroupName] = tempdata["InstancesSetup"]["_base_setting"][charGroupName]
+
+
+						# overwrite with original settings, if they exist
+						if charGroupName_does_exist:
+							for mastername in data["InstancesSetup"][instancename][charGroupName]:
+								data["InstancesSetup"][instancename][charGroupName][mastername] = tempdata["InstancesSetup"][instancename][charGroupName][mastername]
+
+						# Overwrite Chargroup Defaults by Force
+						if forced_Setup_on_all_Groups:
+							for mastername in forced_Setup_on_all_Groups:
+								data["InstancesSetup"][instancename][charGroupName][mastername] = forced_Setup_on_all_Groups[mastername]
+
 
 			# Apply the values of #All to all other Groups if not otherwise
 			# specified
 			for charGroupName in data["InstancesSetup"][instancename]:
 				if not (charGroupName == "#All"):
-					tempdata = copy.deepcopy(data)
-					del data["InstancesSetup"][instancename][charGroupName]
-					data["InstancesSetup"][instancename][charGroupName] = {}
-					data["InstancesSetup"][instancename][charGroupName] = tempdata[
-						"InstancesSetup"][instancename]["#All"]
+					if not (charGroupName == "_All_Force"):
+						tempdata = copy.deepcopy(data)
+						del data["InstancesSetup"][instancename][charGroupName]
+						data["InstancesSetup"][instancename][charGroupName] = {}
 
-					for mastername in tempdata["InstancesSetup"][instancename][charGroupName]:
-						data["InstancesSetup"][instancename][charGroupName][mastername] = tempdata[
-							"InstancesSetup"][instancename][charGroupName][mastername]
+						data["InstancesSetup"][instancename][charGroupName] = tempdata[
+							"InstancesSetup"][instancename]["#All"]
+
+						for mastername in tempdata["InstancesSetup"][instancename][charGroupName]:
+							data["InstancesSetup"][instancename][charGroupName][mastername] = tempdata[
+								"InstancesSetup"][instancename][charGroupName][mastername]
+
+
 
 
 def convertNormal2XYinterpolation(data):
@@ -342,17 +435,18 @@ def convertNormal2XYinterpolation(data):
 			data["MasterSetupMapping"][mastername] = newvalues
 
 	for instancename in data["InstancesSetup"]:
+
 		if not instancename.startswith("_"):
 			# print ""
-			# print "######## Instance"
 			# print instancename
 			for charGroupName in data["InstancesSetup"][instancename]:
 
+
+
 				if not charGroupName.startswith("_"):
-					# print "##### CharGroupName"
 					# print charGroupName
-					# print "###"
 					for mastername in data["InstancesSetup"][instancename][charGroupName]:
+
 						if not mastername.startswith("_"):
 
 							# check for min max expressions
@@ -361,7 +455,7 @@ def convertNormal2XYinterpolation(data):
 							interpolvals = data["InstancesSetup"][
 								instancename][charGroupName][mastername]
 							# print "val", interpolvals, type(interpolvals)
-							# interpolvals = eval(valuestr) ##eval allows math
+							# interpolvals = eval(valuestr) #eval allows math
 							# operations!
 							if not (type(interpolvals) == list):
 								valuestr = str(interpolvals)
@@ -413,6 +507,9 @@ def convertNormal2XYinterpolation(data):
 									tempHalf = str(
 										map(0.5, 0, 1, eval(tempMin), eval(tempMax)))
 
+									tempDouble = str(
+										map(2, 0, 1, eval(tempMin), eval(tempMax)))
+
 									# print tempMin
 									# print tempMax
 									# print "tempHalf", tempHalf
@@ -431,6 +528,10 @@ def convertNormal2XYinterpolation(data):
 
 									valuetemp = valuestr.replace(
 										"half", tempHalf)
+									valuestr = str(valuetemp)
+
+									valuetemp = valuestr.replace(
+										"double", tempDouble)
 									valuestr = str(valuetemp)
 
 									valuetemp = valuestr.replace(
@@ -453,7 +554,7 @@ def convertNormal2XYinterpolation(data):
 							# print ""
 
 							# if not (type(interpolval[-1]) == int):
-							#	## Local Interpolations!
+							# Local Interpolations!
 
 	# check conversion
 	# pprint(data["MasterSetupMapping"])
@@ -467,7 +568,7 @@ def convertNormal2XYinterpolation(data):
 # --------------------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------
 
-"""Main Function/Class"""
+# Main Function/Class
 
 
 class Multipolation(object):
@@ -499,8 +600,8 @@ class Multipolation(object):
 	def SliderInterface(self, data):
 		print "\n\n#2 Init Interface"
 		print "----------------------------------------------------------------------"
-		"  no interface yet"
-		##slider = False
+		print "  There are no sliders, nor a basic interface yet. Please edit the .json."
+		#-slider = False
 		self.Interpolation(data)
 
 	def Interpolation(self, data):
@@ -508,18 +609,24 @@ class Multipolation(object):
 		print "----------------------------------------------------------------------"
 
 		# General Settings
-		#############################
+		# ------------------
 		# ??? ToDo revise: add to spec or delete?
 		Activate_New_Instances = True
 		Activate_Last_Filter = False
 		Add_Masters_as_Instances = False
 		# ????
 
-		# ToDo nicer naming!
-		Standard_Filters_Before = data[
-			"GeneralSetup"]["Filters_general_before"]
-		#Standard_Filters_Before_Interpolated_Instances = Standard_Filters_Before
-		Standard_Filters_After = data["GeneralSetup"]["Filters_general_after"]
+
+		try:
+			General_Custom_Parameter_Before = data["GeneralSetup"]["Filters_general_before"]
+		except:
+			General_Custom_Parameter_Before = data["GeneralSetup"]["Custom_Parameter_before"]
+
+		#General_Custom_Parameter_Before_Interpolated_Instances = General_Custom_Parameter_Before
+		try:
+			General_Custom_Parameter_After = data["GeneralSetup"]["Filters_general_after"]
+		except:
+			General_Custom_Parameter_After = data["GeneralSetup"]["Custom_Parameter_after"]
 
 		# try:
 		# 	XY_Interpolation = data["GeneralSetup"]["XY_Interpolation"]
@@ -527,7 +634,7 @@ class Multipolation(object):
 		# 	XY_Interpolation = False
 
 		# if (XY_Interpolation):
-		#	print "### XY Interpolationt =", XY_Interpolation, "####"
+		#	print "#-- XY Interpolationt =", XY_Interpolation, "#--"
 
 		# check for local/String Interpolations -> and Restructure the Data
 		convert2LocalInterpolation(data)
@@ -540,12 +647,11 @@ class Multipolation(object):
 		Instances_reset_all = data["GeneralSetup"][
 			"Instances_reset_all"]  # False
 
-		Add_Custom_Parameter = len(Standard_Filters_Before) or len(
-			Standard_Filters_After)  # True #eg Filters
-		print "\n\nAdd_Custom_Parameter:", Add_Custom_Parameter, "\n",Standard_Filters_Before, "\n", Standard_Filters_After, "\n"
+		Add_Custom_Parameter = len(General_Custom_Parameter_Before) or len(General_Custom_Parameter_After)  # True #eg Filters
+		#print "\n\nAdd_Custom_Parameter:", Add_Custom_Parameter, "\n",General_Custom_Parameter_Before, "\n", General_Custom_Parameter_After, "\n"
 
 		# Init Variables
-		####################################################
+		# ---------------------
 
 		interpol_array = []
 		Instances = Font.instances
@@ -555,7 +661,7 @@ class Multipolation(object):
 		print "	- Mastercount: ", Master_Count
 
 		# Clear values in the .glyphs file
-		####################################################
+		#----------------------------------------
 
 		Instance_reset_Values = []
 
@@ -564,14 +670,14 @@ class Multipolation(object):
 				[0.0]  # .append(0.0)
 
 		# Sets each Master as an Instances
-		####################################################
+		#----------------------------------------
 
 		# ToDo take Master names from specfile or from glyphs file
 
 		if(Add_Masters_as_Instances):
 			# Add Root as Instance
 			interpol_array.append(
-				Instance_reset_Values + ["0 - Root-Master"] + [Standard_Filters_Before])
+				Instance_reset_Values + ["0 - Root-Master"] + [General_Custom_Parameter_Before])
 			#interpol_array.append("0 - Root-Master")
 
 			# Add other Masters as Instances
@@ -581,10 +687,10 @@ class Multipolation(object):
 				interpol_array[-1][j - 1] = 1.0
 				# j+1) #Master name (1, 2, ...)
 				interpol_array[-1].append(Masters[j].name)
-				interpol_array[-1].append(Standard_Filters_Before)
+				interpol_array[-1].append(General_Custom_Parameter_Before)
 
-		#################################################
-		#################################################
+		# -------------------------------------------------
+		# -------------------------------------------------
 
 		def process(interpol_array):  # slider,
 
@@ -601,17 +707,17 @@ class Multipolation(object):
 			interpolcalcvalue = [0.0, 0.0]
 
 			# Interpolation Settings (Change Values as needed)
-			#################################################
+			# -------------------------------------------------
 
 			MasterNamesCalcOrderArray = getInstanceMasterValuesCalcOrder(
 				data)  # format is: {"Name of Master":1}
 			print "	- MasterNames", MasterNamesCalcOrderArray
 
-			#################################################
-			#################################################
+			# -------------------------------------------------
+			# -------------------------------------------------
 
 			# Excecute / dont't touch if you don't understand ...
-			###########################
+			# -------------------------
 
 			# minus "_info" #len(interpol_array)
 			Interpol_Count = len(data["InstancesSetup"]) - 1
@@ -633,9 +739,9 @@ class Multipolation(object):
 				Instances_added = ""
 				for instancename in data["InstancesSetup"]:
 					if not instancename.startswith("_"):
-						# Standard_Filters_Before_Interpolated_Instances)
+						# General_Custom_Parameter_Before_Interpolated_Instances)
 						# #Instances_Count + k
-						AddInstance(instancename, Standard_Filters_Before)
+						AddInstance(instancename, General_Custom_Parameter_Before)
 						Instances_added += instancename + ", "
 				print ""
 				print ">> Instances removed and added: "
@@ -688,9 +794,18 @@ class Multipolation(object):
 								interpol_sum = [0.0, 0.0]  # clear to zero
 
 								# Iterate through master values to demap the values
-								##
-
+								#
+								Instance_Custom_Parameter = [] #reset, otherwise all following instances would get the same
 								for mastername in data["InstancesSetup"][instancename][charGroupName]:
+									if mastername.startswith("_"):
+										if mastername.startswith("_Custom_Parameter"):
+											Instance_Custom_Parameter = data["InstancesSetup"][instancename][charGroupName][mastername]
+										if mastername.startswith("_Active"):
+											if data["InstancesSetup"][instancename]["#All"][mastername] == False:
+												Instance.active = False
+
+
+
 									if not mastername.startswith("_"):
 										#"convert mapped values to raw interpolation values"
 
@@ -727,7 +842,7 @@ class Multipolation(object):
 
 											interpol_sum[
 												k] += interpolmapvalue_new[k]
-										"""assign raw value for interpolation"""
+										# assign raw value for interpolation
 										#
 										#
 
@@ -743,7 +858,7 @@ class Multipolation(object):
 										# print
 										# data["InstancesSetup"][instancename][charGroupName][mastername]
 
-										#Filter = Standard_Filters_Before_Interpolated_Instances
+										#Filter = General_Custom_Parameter_Before_Interpolated_Instances
 
 										#interpol_array.append([Master_1, Master_2, Master_3, Master_4, Master_5, InstanceName, Filter])
 
@@ -764,8 +879,7 @@ class Multipolation(object):
 									# print "_4__",
 									# data["InstancesSetup"][instancename][charGroupName]["Bold"]["calc"]
 
-									interpolmapvalue = data["InstancesSetup"][
-										instancename][charGroupName][mastername]["map"]
+									interpolmapvalue = data["InstancesSetup"][instancename][charGroupName][mastername]["map"]
 
 									# print mastername
 
@@ -921,8 +1035,7 @@ class Multipolation(object):
 									# print interpolcalcvaluesStr
 									# print Masters[k].id, ": ",
 									# interpolcalcvaluesStr
-									LocalGlyphInterpolations[
-										0] += interpolcalcvaluesStr + ";"
+									LocalGlyphInterpolations[0] += interpolcalcvaluesStr + ";"
 
 									# print "ID"
 									# print Masters[masterindex].id
@@ -931,24 +1044,27 @@ class Multipolation(object):
 									# print
 									# print ""
 
-								scope = str(data["InstancesSetup"][instancename][
-											charGroupName]["_Scope"])  # "include:H"
-								LocalGlyphInterpolations[
-									0] = "Local Interpolation::=;" + LocalGlyphInterpolations[0] + scope
-								# Add Custom Parameters
-								# Add Local Interpolation
-								AddCustomParameter(
-									Instance, LocalGlyphInterpolations)
 
+								scope = str(data["InstancesSetup"][instancename][charGroupName]["_Scope"])  # "include:H"
+								LocalGlyphInterpolations[0] = "Local Interpolation::=;" + LocalGlyphInterpolations[0] + scope
+
+								# Add Local Interpolation
+								AddCustomParameter(Instance, LocalGlyphInterpolations)
 							# print "First Master " + Masters[0].id;
 							# print "Last Master " + Masters[-1].id;
 
 							# print LocalGlyphInterpolations[0]
 
 					# Add Custom Parameters
+					try:
+						if Instance_Custom_Parameter:
+							AddCustomParameter(Instance, Instance_Custom_Parameter)
+					except:
+						pass
+
 
 					# Add General Custom Parameter to All Instances, after
-					AddCustomParameter(Instance, Standard_Filters_After)
+					AddCustomParameter(Instance, General_Custom_Parameter_After)
 
 					if ([1.0, 1.0] == finaloverallcalcsum):
 						print "- Instance successful created: ", InstanceName
@@ -963,3 +1079,13 @@ class Multipolation(object):
 
 
 Multipolation()
+
+
+# Minify
+# manually!
+	#be aware of  [#All]
+
+# All that does not work: :/
+# pyminifier --obfuscate --pyz=Multipolation.pyz Multipolation.py
+# pyminifier --pyz=Multipolation.pyz Multipolation.py
+# pyminifier --obfuscate -o=Multipolation_min.py Multipolation.py
