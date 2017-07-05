@@ -24,7 +24,7 @@ https://github.com/Manuel87/RobotoFlex
 - Integration as a Custom Parameter in Glyphs Font Info (getting rid of the extra spec file)
 - Interface (Setup, Slider, Knobs, ...)
 - Full integration of complex axes (axes relations, math, switches, ...)
-  - integration of the new, more descriptive syntax (syntax folder)
+  - integration of the new, more descriptive syntax (NewMarkup folder)
 - Direct export as a variable  font (though the variable font spec has to catch up with features)
 
 ### Predecessor
