@@ -1,8 +1,8 @@
 # GlyphsMultipolation
 Extention for the Glyphs app. With this script you can handle complex interpolations and any amount of axes.
 
-### Demo: RobotoFlex
-https://github.com/Manuel87/RobotoFlex
+### Demo: Noboto Flex
+https://github.com/Manuel87/NobotoFlex
 
 ### Install
 1. Move the “multipolation.min.py” to the script folder of Glyphs.
